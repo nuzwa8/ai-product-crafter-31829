@@ -20,29 +20,51 @@ export const mockData = {
     }
   ],
   
-  'spec-writer': [
+  'template-generator': [
     {
-      productTitle: "Ultimate Productivity Planner Bundle",
-      description: "A comprehensive planning system designed for ambitious professionals who want to maximize their productivity and achieve their goals with clarity and purpose.",
-      specifications: {
-        pageCount: 45,
-        format: "PDF + PNG files",
-        size: "A4 & US Letter compatible",
-        colorScheme: "Neutral grays with teal accents",
-        printable: "Yes - home or professional printing"
+      templateId: "temp_001",
+      previewUrl: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=1000&fit=crop",
+      pageSize: "A4",
+      orientation: "Portrait",
+      style: "Minimalist with blue accents",
+      downloadUrls: {
+        pdf: "/api/download/temp_001.pdf",
+        png: "/api/download/temp_001.png",
+        svg: "/api/download/temp_001.svg"
       },
-      includesItems: [
-        "Monthly planner (12 pages)",
-        "Weekly spreads (52 pages)",
-        "Goal tracker with milestones",
-        "Habit tracker with streaks",
-        "Notes and reflection pages",
-        "Quarterly review templates"
-      ],
-      technicalDetails: {
-        fileSize: "Approx. 25MB",
-        compatibility: "iPad, tablets, desktop, printable",
-        softwareRequired: "PDF reader or note-taking app (GoodNotes, Notability, etc.)"
+      metadata: {
+        generatedAt: "2024-10-19T21:31:55Z",
+        prompt: "Weekly planner with Monday start",
+        settings: {
+          paperSize: "a4",
+          orientation: "portrait",
+          accentColor: "#3b82f6",
+          font: "inter",
+          dpi: 300
+        }
+      }
+    },
+    {
+      templateId: "temp_002",
+      previewUrl: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1000&h=800&fit=crop",
+      pageSize: "Letter",
+      orientation: "Landscape",
+      style: "Modern with green accents",
+      downloadUrls: {
+        pdf: "/api/download/temp_002.pdf",
+        png: "/api/download/temp_002.png",
+        svg: "/api/download/temp_002.svg"
+      },
+      metadata: {
+        generatedAt: "2024-10-19T21:32:15Z",
+        prompt: "Monthly calendar with Sunday start",
+        settings: {
+          paperSize: "letter",
+          orientation: "landscape",
+          accentColor: "#10b981",
+          font: "roboto",
+          dpi: 150
+        }
       }
     }
   ],

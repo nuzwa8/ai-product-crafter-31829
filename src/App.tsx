@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import Index from "./pages/Index";
-import SpecWriter from "./pages/SpecWriter";
+import TemplateGenerator from "./pages/TemplateGenerator";
 import BulkCsv from "./pages/BulkCsv";
 import ListingKit from "./pages/ListingKit";
 import PodBriefs from "./pages/PodBriefs";
@@ -25,7 +25,7 @@ const App = () => (
         <AppShell>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/spec-writer" element={<SpecWriter />} />
+            <Route path="/template-generator" element={<TemplateGenerator />} />
             <Route path="/bulk-csv" element={<BulkCsv />} />
             <Route path="/listing-kit" element={<ListingKit />} />
             <Route path="/pod-briefs" element={<PodBriefs />} />

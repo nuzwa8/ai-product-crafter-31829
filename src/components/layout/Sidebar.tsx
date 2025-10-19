@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   Search,
-  FileText,
+  LayoutTemplate,
   Table,
   Megaphone,
   Shirt,
@@ -21,7 +21,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'finder', name: 'Product Finder', icon: Search, path: '/' },
-  { id: 'spec-writer', name: 'Spec Writer', icon: FileText, path: '/spec-writer' },
+  { id: 'template-generator', name: 'Template Generator', icon: LayoutTemplate, path: '/template-generator' },
   { id: 'bulk-csv', name: 'Bulk CSV', icon: Table, path: '/bulk-csv' },
   { id: 'listing-kit', name: 'Listing Kit', icon: Megaphone, path: '/listing-kit' },
   { id: 'pod-briefs', name: 'POD Briefs', icon: Shirt, path: '/pod-briefs' },
