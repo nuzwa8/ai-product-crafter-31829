@@ -1,5 +1,3 @@
-import { simulateGeneration } from './mockData';
-
 export interface TemplateSettings {
   paperSize: 'a4' | 'letter' | 'a5';
   orientation: 'portrait' | 'landscape';
@@ -30,22 +28,96 @@ export const generateTemplate = async (
   prompt: string,
   settings: TemplateSettings
 ): Promise<GeneratedTemplate> => {
-  // Simulate API call with delay
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  
-  // Return mock template data
-  const result = await simulateGeneration('template-generator', { prompt, settings });
-  return result as GeneratedTemplate;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-template`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ prompt, settings }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate template');
+  }
+
+  return await response.json();
 };
 
-export const downloadFile = (templateId: string, format: 'pdf' | 'png' | 'svg') => {
-  // Simulate file download
+export const downloadFile = async (
+  templateId: string, 
+  format: 'pdf' | 'png' | 'svg',
+  dataUrl: string
+) => {
   const link = document.createElement('a');
-  link.href = `/api/download/${templateId}.${format}`;
-  link.download = `template_${templateId}.${format}`;
+  
+  if (format === 'svg') {
+    // SVG can be downloaded directly
+    link.href = dataUrl;
+    link.download = `template_${templateId}.${format}`;
+  } else if (format === 'png') {
+    // Convert SVG to PNG using canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    await new Promise((resolve, reject) => {
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            link.href = URL.createObjectURL(blob);
+            link.download = `template_${templateId}.png`;
+            resolve(true);
+          } else {
+            reject(new Error('Failed to convert to PNG'));
+          }
+        }, 'image/png');
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  } else if (format === 'pdf') {
+    // Import jsPDF dynamically
+    const { jsPDF } = await import('jspdf');
+    
+    // Create PDF from SVG
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    
+    // Calculate PDF dimensions
+    const pdf = new jsPDF({
+      orientation: img.width > img.height ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (img.height * pdfWidth) / img.width;
+    
+    pdf.addImage(dataUrl, 'SVG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`template_${templateId}.pdf`);
+    return; // PDF saves directly, no need for link
+  }
+  
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  
+  // Clean up blob URL if created
+  if (format === 'png') {
+    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+  }
 };
 
 // Preset templates

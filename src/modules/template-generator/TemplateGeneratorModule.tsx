@@ -69,12 +69,25 @@ export function TemplateGeneratorModule() {
     }
   };
 
-  const handleDownload = (format: 'pdf' | 'png' | 'svg') => {
-    if (generatedTemplate) {
-      downloadFile(generatedTemplate.templateId, format);
+  const handleDownload = async (format: 'pdf' | 'png' | 'svg') => {
+    if (!generatedTemplate) return;
+    
+    try {
+      await downloadFile(
+        generatedTemplate.templateId, 
+        format,
+        generatedTemplate.downloadUrls.svg
+      );
       toast({
-        title: "Download started",
-        description: `Downloading ${format.toUpperCase()} file...`
+        title: "Download successful",
+        description: `${format.toUpperCase()} file downloaded successfully`
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download failed",
+        description: "Please try again",
+        variant: "destructive"
       });
     }
   };
