@@ -21,7 +21,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'finder', name: 'Product Finder', icon: Search, path: '/' },
-  { id: 'template-generator', name: 'Template Generator', icon: LayoutTemplate, path: '/template-generator' },
+  { id: 'template-generator', name: 'AI Template Generators', icon: LayoutTemplate, path: '/template-generator' },
   { id: 'bulk-csv', name: 'Bulk CSV', icon: Table, path: '/bulk-csv' },
   { id: 'listing-kit', name: 'Listing Kit', icon: Megaphone, path: '/listing-kit' },
   { id: 'pod-briefs', name: 'POD Briefs', icon: Shirt, path: '/pod-briefs' },

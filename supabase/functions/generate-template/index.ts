@@ -223,8 +223,25 @@ Settings:
 });
 
 function generateSVG(spec: any, settings: any): string {
-  // Calculate dimensions based on paper size and orientation
   const dimensions = getPaperDimensions(settings.paperSize, settings.orientation);
+  
+  // Professional page margins (in mm)
+  const margins = {
+    top: 30,
+    bottom: 20,
+    left: 15,
+    right: 15
+  };
+  
+  const spacing = {
+    headerPadding: 10,
+    columnGap: 3,
+    rowGap: 2,
+    sectionGap: 8
+  };
+  
+  const contentWidth = dimensions.width - margins.left - margins.right;
+  const contentHeight = dimensions.height - margins.top - margins.bottom;
   
   let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${dimensions.width}mm" height="${dimensions.height}mm" 
@@ -239,46 +256,357 @@ function generateSVG(spec: any, settings: any): string {
   <rect width="100%" height="100%" fill="${spec.styling.backgroundColor || '#ffffff'}"/>
 `;
 
-  // Render all elements
-  spec.elements.forEach((element: any) => {
-    switch (element.type) {
-      case 'text':
-        svgContent += `
-  <text x="${element.x}" y="${element.y}" 
-        font-size="${element.fontSize || spec.styling.bodySize}" 
-        font-weight="${element.fontWeight || 'normal'}"
-        fill="${element.fill || '#000000'}">
-    ${escapeXml(element.content)}
-  </text>`;
-        break;
-      case 'rect':
-        svgContent += `
-  <rect x="${element.x}" y="${element.y}" 
-        width="${element.width}" height="${element.height}"
-        stroke="${element.stroke || spec.styling.accentColor}" 
-        fill="${element.fill || 'none'}" 
-        stroke-width="1"/>`;
-        break;
-      case 'line':
-        svgContent += `
-  <line x1="${element.x}" y1="${element.y}" 
-        x2="${element.x + (element.width || 0)}" y2="${element.y + (element.height || 0)}"
-        stroke="${element.stroke || spec.styling.accentColor}" 
-        stroke-width="1"/>`;
-        break;
-      case 'circle':
-        svgContent += `
-  <circle cx="${element.x}" cy="${element.y}" 
-          r="${element.width || 5}"
-          stroke="${element.stroke || spec.styling.accentColor}" 
-          fill="${element.fill || 'none'}" 
-          stroke-width="1"/>`;
-        break;
-    }
-  });
+  // Render layout based on template type
+  if (spec.templateType === 'weekly-planner') {
+    svgContent += generateWeeklyPlanner(margins, contentWidth, contentHeight, spacing, spec.styling);
+  } else if (spec.templateType === 'monthly-calendar') {
+    svgContent += generateMonthlyCalendar(margins, contentWidth, contentHeight, spacing, spec.styling);
+  } else if (spec.templateType === 'daily-schedule') {
+    svgContent += generateDailySchedule(margins, contentWidth, contentHeight, spacing, spec.styling);
+  } else if (spec.templateType === 'habit-tracker') {
+    svgContent += generateHabitTracker(margins, contentWidth, contentHeight, spacing, spec.styling);
+  } else if (spec.templateType === 'meal-planner') {
+    svgContent += generateMealPlanner(margins, contentWidth, contentHeight, spacing, spec.styling);
+  } else {
+    // Custom template - render elements from spec
+    spec.elements.forEach((element: any) => {
+      svgContent += renderElement(element, spec.styling, margins);
+    });
+  }
 
   svgContent += '\n</svg>';
   return svgContent;
+}
+
+function renderElement(element: any, styling: any, margins: any): string {
+  let content = '';
+  
+  switch (element.type) {
+    case 'text':
+      content += `
+  <text x="${margins.left + (element.x || 0)}" y="${margins.top + (element.y || 0)}" 
+        font-size="${element.fontSize || styling.bodySize}pt" 
+        font-weight="${element.fontWeight || 'normal'}"
+        fill="${element.fill || '#000000'}"
+        text-anchor="${element.textAnchor || 'start'}">
+    ${escapeXml(element.content)}
+  </text>`;
+      break;
+    case 'rect':
+      content += `
+  <rect x="${margins.left + (element.x || 0)}" y="${margins.top + (element.y || 0)}" 
+        width="${element.width}" height="${element.height}"
+        stroke="${element.stroke || styling.accentColor}" 
+        fill="${element.fill || 'none'}" 
+        stroke-width="0.5"/>`;
+      break;
+    case 'line':
+      content += `
+  <line x1="${margins.left + (element.x || 0)}" y1="${margins.top + (element.y || 0)}" 
+        x2="${margins.left + (element.x || 0) + (element.width || 0)}" 
+        y2="${margins.top + (element.y || 0) + (element.height || 0)}"
+        stroke="${element.stroke || styling.accentColor}" 
+        stroke-width="0.5"/>`;
+      break;
+  }
+  
+  return content;
+}
+
+function generateWeeklyPlanner(margins: any, contentWidth: number, contentHeight: number, spacing: any, styling: any): string {
+  let content = '';
+  
+  // Header
+  const headerHeight = 15;
+  content += `
+  <text x="${margins.left}" y="${margins.top - 5}" 
+        font-size="18pt" font-weight="700" fill="#000000">
+    Weekly Planner
+  </text>
+  <text x="${margins.left}" y="${margins.top + 8}" 
+        font-size="10pt" fill="#666666">
+    Week of: _______________
+  </text>`;
+  
+  // Calculate column dimensions
+  const numColumns = 7;
+  const totalGaps = (numColumns - 1) * spacing.columnGap;
+  const columnWidth = (contentWidth - totalGaps) / numColumns;
+  const columnHeight = contentHeight - headerHeight - spacing.sectionGap;
+  const startY = margins.top + headerHeight + spacing.sectionGap;
+  
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
+  // Draw day columns
+  for (let i = 0; i < numColumns; i++) {
+    const x = margins.left + (i * (columnWidth + spacing.columnGap));
+    
+    // Column border
+    content += `
+  <rect x="${x}" y="${startY}" 
+        width="${columnWidth}" height="${columnHeight}"
+        stroke="${styling.accentColor}" fill="none" stroke-width="1"/>`;
+    
+    // Day name header
+    content += `
+  <rect x="${x}" y="${startY}" 
+        width="${columnWidth}" height="12"
+        fill="${styling.accentColor}" fill-opacity="0.1"/>
+  <text x="${x + columnWidth / 2}" y="${startY + 8}" 
+        font-size="9pt" font-weight="600" 
+        fill="${styling.accentColor}"
+        text-anchor="middle">
+    ${days[i]}
+  </text>`;
+    
+    // Date placeholder
+    content += `
+  <text x="${x + 3}" y="${startY + 20}" 
+        font-size="8pt" fill="#999999">
+    __/__
+  </text>`;
+    
+    // Task lines
+    const lineStartY = startY + 25;
+    const lineSpacing = 6;
+    const numLines = Math.floor((columnHeight - 30) / lineSpacing);
+    
+    for (let j = 0; j < numLines; j++) {
+      const lineY = lineStartY + (j * lineSpacing);
+      content += `
+  <line x1="${x + 2}" y1="${lineY}" 
+        x2="${x + columnWidth - 2}" y2="${lineY}"
+        stroke="#E0E0E0" stroke-width="0.5"/>`;
+    }
+  }
+  
+  return content;
+}
+
+function generateMonthlyCalendar(margins: any, contentWidth: number, contentHeight: number, spacing: any, styling: any): string {
+  let content = '';
+  
+  // Header
+  content += `
+  <text x="${margins.left}" y="${margins.top - 5}" 
+        font-size="20pt" font-weight="700" fill="#000000">
+    _____________ 20___
+  </text>`;
+  
+  const startY = margins.top + 10;
+  const numColumns = 7;
+  const numRows = 6;
+  const totalColGaps = (numColumns - 1) * spacing.columnGap;
+  const totalRowGaps = (numRows - 1) * spacing.rowGap;
+  const cellWidth = (contentWidth - totalColGaps) / numColumns;
+  const cellHeight = (contentHeight - 20 - totalRowGaps) / numRows;
+  
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  // Day headers
+  for (let i = 0; i < numColumns; i++) {
+    const x = margins.left + (i * (cellWidth + spacing.columnGap));
+    content += `
+  <rect x="${x}" y="${startY}" 
+        width="${cellWidth}" height="10"
+        fill="${styling.accentColor}" fill-opacity="0.15"/>
+  <text x="${x + cellWidth / 2}" y="${startY + 7}" 
+        font-size="8pt" font-weight="600" 
+        fill="${styling.accentColor}"
+        text-anchor="middle">
+    ${days[i]}
+  </text>`;
+  }
+  
+  // Calendar grid
+  const gridStartY = startY + 12;
+  for (let row = 0; row < numRows; row++) {
+    for (let col = 0; col < numColumns; col++) {
+      const x = margins.left + (col * (cellWidth + spacing.columnGap));
+      const y = gridStartY + (row * (cellHeight + spacing.rowGap));
+      
+      content += `
+  <rect x="${x}" y="${y}" 
+        width="${cellWidth}" height="${cellHeight}"
+        stroke="#CCCCCC" fill="none" stroke-width="0.5"/>
+  <text x="${x + 3}" y="${y + 8}" 
+        font-size="9pt" font-weight="500" fill="#333333">
+    ${row * 7 + col + 1}
+  </text>`;
+    }
+  }
+  
+  return content;
+}
+
+function generateDailySchedule(margins: any, contentWidth: number, contentHeight: number, spacing: any, styling: any): string {
+  let content = '';
+  
+  // Header
+  content += `
+  <text x="${margins.left}" y="${margins.top - 5}" 
+        font-size="18pt" font-weight="700" fill="#000000">
+    Daily Schedule
+  </text>
+  <text x="${margins.left}" y="${margins.top + 8}" 
+        font-size="10pt" fill="#666666">
+    Date: _______________
+  </text>`;
+  
+  const startY = margins.top + 18;
+  const timeColumnWidth = 25;
+  const taskColumnWidth = contentWidth - timeColumnWidth - 5;
+  const rowHeight = 12;
+  
+  // Time slots from 6 AM to 10 PM
+  const hours = [];
+  for (let h = 6; h <= 22; h++) {
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h > 12 ? h - 12 : h;
+    hours.push(`${displayHour}:00 ${period}`);
+    hours.push(`${displayHour}:30 ${period}`);
+  }
+  
+  hours.forEach((time, index) => {
+    const y = startY + (index * rowHeight);
+    
+    // Time label
+    content += `
+  <text x="${margins.left}" y="${y + 8}" 
+        font-size="7pt" fill="#666666">
+    ${time}
+  </text>`;
+    
+    // Task line
+    content += `
+  <line x1="${margins.left + timeColumnWidth}" y1="${y + 4}" 
+        x2="${margins.left + contentWidth}" y2="${y + 4}"
+        stroke="#E0E0E0" stroke-width="0.5"/>`;
+  });
+  
+  return content;
+}
+
+function generateHabitTracker(margins: any, contentWidth: number, contentHeight: number, spacing: any, styling: any): string {
+  let content = '';
+  
+  // Header
+  content += `
+  <text x="${margins.left}" y="${margins.top - 5}" 
+        font-size="18pt" font-weight="700" fill="#000000">
+    30-Day Habit Tracker
+  </text>
+  <text x="${margins.left}" y="${margins.top + 8}" 
+        font-size="10pt" fill="#666666">
+    Month: _______________
+  </text>`;
+  
+  const startY = margins.top + 18;
+  const numDays = 30;
+  const numHabits = 10;
+  const habitLabelWidth = 50;
+  const cellSize = Math.min(
+    (contentWidth - habitLabelWidth) / numDays,
+    (contentHeight - 20) / numHabits
+  ) - 1;
+  
+  // Day numbers header
+  for (let day = 1; day <= numDays; day++) {
+    const x = margins.left + habitLabelWidth + ((day - 1) * (cellSize + 1));
+    content += `
+  <text x="${x + cellSize / 2}" y="${startY - 2}" 
+        font-size="6pt" fill="#666666" text-anchor="middle">
+    ${day}
+  </text>`;
+  }
+  
+  // Habit rows
+  for (let habit = 0; habit < numHabits; habit++) {
+    const y = startY + (habit * (cellSize + 1));
+    
+    // Habit label
+    content += `
+  <text x="${margins.left}" y="${y + cellSize / 2 + 2}" 
+        font-size="7pt" fill="#333333">
+    Habit ${habit + 1}
+  </text>`;
+    
+    // Day checkboxes
+    for (let day = 0; day < numDays; day++) {
+      const x = margins.left + habitLabelWidth + (day * (cellSize + 1));
+      content += `
+  <rect x="${x}" y="${y}" 
+        width="${cellSize}" height="${cellSize}"
+        stroke="${styling.accentColor}" fill="none" stroke-width="0.5"/>`;
+    }
+  }
+  
+  return content;
+}
+
+function generateMealPlanner(margins: any, contentWidth: number, contentHeight: number, spacing: any, styling: any): string {
+  let content = '';
+  
+  // Header
+  content += `
+  <text x="${margins.left}" y="${margins.top - 5}" 
+        font-size="18pt" font-weight="700" fill="#000000">
+    Weekly Meal Planner
+  </text>
+  <text x="${margins.left}" y="${margins.top + 8}" 
+        font-size="10pt" fill="#666666">
+    Week of: _______________
+  </text>`;
+  
+  const startY = margins.top + 18;
+  const numColumns = 7;
+  const numRows = 4; // Breakfast, Lunch, Dinner, Snacks
+  const totalColGaps = (numColumns - 1) * spacing.columnGap;
+  const totalRowGaps = (numRows - 1) * spacing.rowGap;
+  const columnWidth = (contentWidth - totalColGaps) / numColumns;
+  const rowHeight = (contentHeight - 30 - totalRowGaps) / numRows;
+  
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const meals = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+  
+  // Day headers
+  for (let i = 0; i < numColumns; i++) {
+    const x = margins.left + (i * (columnWidth + spacing.columnGap));
+    content += `
+  <rect x="${x}" y="${startY}" 
+        width="${columnWidth}" height="10"
+        fill="${styling.accentColor}" fill-opacity="0.15"/>
+  <text x="${x + columnWidth / 2}" y="${startY + 7}" 
+        font-size="8pt" font-weight="600" 
+        fill="${styling.accentColor}"
+        text-anchor="middle">
+    ${days[i]}
+  </text>`;
+  }
+  
+  // Meal grid
+  const gridStartY = startY + 12;
+  for (let row = 0; row < numRows; row++) {
+    // Meal label
+    content += `
+  <text x="${margins.left - 3}" y="${gridStartY + (row * (rowHeight + spacing.rowGap)) + 15}" 
+        font-size="7pt" font-weight="600" 
+        fill="#666666" text-anchor="end">
+    ${meals[row]}
+  </text>`;
+    
+    for (let col = 0; col < numColumns; col++) {
+      const x = margins.left + (col * (columnWidth + spacing.columnGap));
+      const y = gridStartY + (row * (rowHeight + spacing.rowGap));
+      
+      content += `
+  <rect x="${x}" y="${y}" 
+        width="${columnWidth}" height="${rowHeight}"
+        stroke="#CCCCCC" fill="none" stroke-width="0.5"/>`;
+    }
+  }
+  
+  return content;
 }
 
 function getPaperDimensions(paperSize: string, orientation: string): { width: number; height: number } {
